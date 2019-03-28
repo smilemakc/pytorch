@@ -233,7 +233,7 @@ def _unique_state_dict(module, keep_vars=False):
         if keep_vars:
             filtered_dict[k] = v
         else:
-        filtered_dict[k] = v.data
+            filtered_dict[k] = v.data
     return filtered_dict
 
 
