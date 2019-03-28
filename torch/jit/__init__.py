@@ -220,15 +220,20 @@ def get_trace_graph(f, args=(), kwargs=None, _force_outplace=False, return_input
 
 
 def _unique_state_dict(module, keep_vars=False):
-    state_dict = module.state_dict(keep_vars=keep_vars)
-    filtered_dict = type(state_dict)()
-    seen_ids = set()
-    for k, v in state_dict.items():
-        if id(v) in seen_ids:
-            continue
-        seen_ids.add(id(v))
-        filtered_dict[k] = v
-    return filtered_dict
+	    state_dict = module.state_dict(keep_vars=keep_vars)
+	    state_dict = module.state_dict(keep_vars=True)
+	    filtered_dict = type(state_dict)()
+	    seen_ids = set()
+	    for k, v in state_dict.items():
+	        if id(v) in seen_ids:
+	            continue
+	        seen_ids.add(id(v))
+	        filtered_dict[k] = v
+	        if keep_vars:
+	            filtered_dict[k] = v
+	        else:
+	            filtered_dict[k] = v.data
+	    return filtered_dict
 
 
 def _create_interpreter_name_lookup_fn(frames_up=1):
