@@ -31,6 +31,7 @@ import collections
 import re
 import inspect
 import pickle
+
 if sys.version_info[0] > 2:
     import pathlib
 
@@ -129,6 +130,7 @@ def load(f, map_location=None, _extra_files=DEFAULT_EXTRA_FILES_MAP):
                 setattr(curr, name, ScriptModule())
             curr = getattr(curr, name)
         return curr
+
     if isinstance(f, string_classes):
         if not os.path.exists(f):
             raise ValueError("The provided filename {} does not exist".format(f))
@@ -220,19 +222,18 @@ def get_trace_graph(f, args=(), kwargs=None, _force_outplace=False, return_input
 
 
 def _unique_state_dict(module, keep_vars=False):
-    state_dict = module.state_dict(keep_vars=keep_vars)
     state_dict = module.state_dict(keep_vars=True)
     filtered_dict = type(state_dict)()
     seen_ids = set()
     for k, v in state_dict.items():
-		if id(v) in seen_ids:
-	    	continue
-		seen_ids.add(id(v))
-		filtered_dict[k] = v
-		if keep_vars:
-	    	filtered_dict[k] = v
-		else:
-	    	filtered_dict[k] = v.data
+        if id(v) in seen_ids:
+            continue
+        seen_ids.add(id(v))
+        filtered_dict[k] = v
+        if keep_vars:
+            filtered_dict[k] = v
+        else:
+        filtered_dict[k] = v.data
     return filtered_dict
 
 
@@ -254,6 +255,7 @@ def _create_interpreter_name_lookup_fn(frames_up=1):
             if isinstance(v, torch.Tensor) and var is v:
                 return k if k != 'self' else ''
         return ''
+
     return _get_interpreter_name_for_var
 
 
@@ -302,6 +304,7 @@ def _clone_inputs(args):
             return v
         else:
             return a.clone()
+
     return function._nested_map(lambda x: isinstance(x, torch.Tensor),
                                 clone_input, condition_msg="tensors")(args)
 
@@ -402,7 +405,7 @@ def verify(model, args, loss_fn=torch.sum, devices=None):
         if assert_compiled and compiled_fn.hits == hits:
             raise RuntimeError("failed to use the compiled function")
         if not isinstance(out, tuple):
-            out = (out, )
+            out = (out,)
         if loss_fn == torch.sum and len(out) != 1:
             raise ValueError(("Model returns {} outputs, but default loss function "
                               "(torch.sum) can only handle a single output").format(len(out)))
@@ -548,7 +551,7 @@ def _check_trace(check_inputs, func, executor_options, module, check_tolerance, 
                 nondeterministic_ops_warning = "Trace had nondeterministic nodes. "
                 nondeterministic_ops_warning += "Did you forget call .eval() on your model? Nodes:\n"
                 nondeterministic_ops_warning += "\n".join([indent(str(op)) for op in nondeterm_ops][:20])
-                nondeterministic_ops_warning += "\nThis may cause errors in trace checking. To disable trace checking,"\
+                nondeterministic_ops_warning += "\nThis may cause errors in trace checking. To disable trace checking," \
                                                 " pass check_trace=False to torch.jit.trace()"
                 warnings.warn(nondeterministic_ops_warning, category=TracerWarning, stacklevel=5)
 
@@ -561,7 +564,8 @@ def _check_trace(check_inputs, func, executor_options, module, check_tolerance, 
                 except AssertionError as e:
                     maybe_warn_nondeterministic()
                     warnings.warn('Output nr ' + str(i + 1) + '. of the traced function does not match '
-                                  'the corresponding output of the ' + match_what + '. Detailed error:\n' + str(e),
+                                                              'the corresponding output of the ' + match_what + '. Detailed error:\n' + str(
+                        e),
                                   category=TracerWarning, stacklevel=4)
                     all_ok = False
 
@@ -832,8 +836,10 @@ def batch(batch_size=1, optimize=True, _frames_up=0):
             if len(result) == 1:
                 return result[0]
             return result
+
         wrapper.__doc__ = fn.__doc__
         return wrapper
+
     return decorator
 
 
@@ -952,6 +958,7 @@ class OrderedBufferDict(OrderedDictWrapper):
             raise KeyError(k)
         return self.module._get_buffer(k)
 
+
 # base types that can be constants
 # in addition, tuples and lists of these base types are also considered constants
 # If you edit this list, then you also need to edit the handlers in
@@ -979,6 +986,7 @@ def _create_methods_from_stubs(self, stubs):
     rcbs = [m.resolution_callback for m in stubs]
     defaults = [get_default_args(m.original_method) for m in stubs]
     self._create_methods(defs, rcbs, defaults)
+
 
 # For each user-defined class that subclasses ScriptModule this meta-class,
 # (1) finds all the methods annotated with @script_method
@@ -1238,6 +1246,7 @@ if _enabled:
                         setattr(curr, name, ScriptModule())
                     curr = getattr(curr, name)
                 return curr
+
             self._copy_into(module_lookup, {}, [])
             return m
 
@@ -1246,6 +1255,7 @@ if _enabled:
                 "ScriptModules cannot be saved using torch.save. " +
                 "Mixed serialization of script and non-script modules is not supported. " +
                 "For purely script modules use my_script_module.save(<filename>) instead.")
+
 
     class WeakScriptModuleProxy(ScriptModule):
         def __init__(self, original, stubs):
@@ -1371,6 +1381,7 @@ _compiled_methods_whitelist = {
 def _make_fail(name):
     def fail(self, *args, **kwargs):
         raise RuntimeError(name + " is not supported on ScriptModules")
+
     return fail
 
 
@@ -1514,6 +1525,7 @@ def _get_builtin_table():
             v = getattr(mod, name)
             if callable(v):
                 _builtin_table[id(v)] = "aten::" + name
+
     for mod in _modules_containing_builtins:
         register_all(mod)
 
@@ -1565,6 +1577,7 @@ def _get_script_class(name):
                            "Did you forget to import it?".format(name))
     return _script_classes[name]
 
+
 # torch.jit.Error
 Error = torch._C.JITException
 
@@ -1586,7 +1599,6 @@ def annotate(the_type, the_value):
 
 
 Attribute = collections.namedtuple('Attribute', ['value', 'type'])
-
 
 if not torch._C._jit_init():
     raise RuntimeError("JIT initialization failed")
